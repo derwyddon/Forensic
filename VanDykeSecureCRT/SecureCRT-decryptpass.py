@@ -22,26 +22,33 @@
 # C:\>python SecureCRT-decryptpass.py C:\Users\user1\AppData\Roaming\VanDyke\Config\Sessions\192.168.0.1.ini
 # C:\Users\user1\AppData\Roaming\VanDyke\Config\Sessions\192.168.0.1.ini
 # ssh -p 22 user@192.168.0.1 # 123456
+#
+#Updated to python 3.8
 
 
 from Crypto.Cipher import Blowfish
+
 import argparse
 import re
+from codecs import decode, encode
 
 def decrypt(password) :
-    c1 = Blowfish.new('5F B0 45 A2 94 17 D9 16 C6 C6 A2 FF 06 41 82 B7'.replace(' ','').decode('hex'), Blowfish.MODE_CBC, '\x00'*8)
-    c2 = Blowfish.new('24 A6 3D DE 5B D3 B3 82 9C 7E 06 F4 08 16 AA 07'.replace(' ','').decode('hex'), Blowfish.MODE_CBC, '\x00'*8)
-    padded = c1.decrypt(c2.decrypt(password.decode('hex'))[4:-4])
-    p = ''
-    while padded[:2] != '\x00\x00' :
+
+    c1 = Blowfish.new(decode('5F B0 45 A2 94 17 D9 16 C6 C6 A2 FF 06 41 82 B7'.replace(' ', ''),'hex'), Blowfish.MODE_CBC,
+                      b'\x00' * 8)
+    c2 = Blowfish.new(decode('24 A6 3D DE 5B D3 B3 82 9C 7E 06 F4 08 16 AA 07'.replace(' ', ''),'hex'), Blowfish.MODE_CBC,
+                      b'\x00' * 8)
+    padded = c1.decrypt(c2.decrypt(decode(password,'hex'))[4:-4])
+    p = b''
+    while padded[:2] != b'\x00\x00':
         p += padded[:2]
         padded = padded[2:]
     return p.decode('UTF-16')
 
-REGEX_HOSTNAME = re.compile(ur'S:"Hostname"=([^\r\n]*)')
-REGEX_PASWORD = re.compile(ur'S:"Password"=u([0-9a-f]+)')
-REGEX_PORT = re.compile(ur'D:"\[SSH2\] Port"=([0-9a-f]{8})')
-REGEX_USERNAME = re.compile(ur'S:"Username"=([^\r\n]*)')
+REGEX_HOSTNAME = re.compile(r'S:"Hostname"=([^\r\n]*)')
+REGEX_PASWORD = re.compile(r'S:"Password"=u([0-9a-f]+)')
+REGEX_PORT = re.compile(r'D:"\[SSH2\] Port"=([0-9a-f]{8})')
+REGEX_USERNAME = re.compile(r'S:"Username"=([^\r\n]*)')
 
 def hostname(x) :
     m = REGEX_HOSTNAME.search(x)
@@ -75,7 +82,8 @@ args = parser.parse_args()
 
 for f in args.files :
     c = f.read().replace('\x00', '')
-    print f.name
-    print "ssh %s%s%s # %s"%(port(c), username(c), hostname(c), password(c))
+    print (f.name)
+    print ("ssh %s%s%s # %s"%(port(c), username(c), hostname(c), password(c)))
+
 
 
